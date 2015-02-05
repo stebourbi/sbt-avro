@@ -38,8 +38,9 @@ object SbtAvro extends Plugin {
 
   val generate = TaskKey[Seq[File]]("generate", "Generate the Java sources for the Avro files.")
 
-  def avroSettings: Seq[Setting[_]] = avroSettingsForConfig(Compile)
+  lazy val avroSettings: Seq[Setting[_]] = avroSettingsForConfig(Compile)
 
+  lazy val avroSettingsForTests: Seq[Setting[_]] = avroSettingsForConfig(Test)
 
   def avroSettingsForConfig(config:Configuration) : Seq[Setting[_]] = inConfig(avroConfig)(Seq[Setting[_]](
     sourceDirectory <<= (sourceDirectory in config) { _ / "avro" },
