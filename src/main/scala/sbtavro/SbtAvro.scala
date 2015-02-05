@@ -8,11 +8,8 @@ import org.apache.avro.compiler.idl.Idl
 import org.apache.avro.compiler.specific.SpecificCompiler
 import org.apache.avro.generic.GenericData.StringType
 
-import sbt.Classpaths
-import sbt.Compile
+import sbt._
 import sbt.ConfigKey.configurationToKey
-import sbt.FileFunction
-import sbt.FilesInfo
 import sbt.Keys.cacheDirectory
 import sbt.Keys.classpathTypes
 import sbt.Keys.cleanFiles
@@ -27,19 +24,8 @@ import sbt.Keys.sourceManaged
 import sbt.Keys.streams
 import sbt.Keys.update
 import sbt.Keys.version
-import sbt.Logger
-import sbt.Plugin
 import sbt.Scoped.t2ToTable2
 import sbt.Scoped.t5ToTable5
-import sbt.Setting
-import sbt.SettingKey
-import sbt.TaskKey
-import sbt.config
-import sbt.globFilter
-import sbt.inConfig
-import sbt.richFile
-import sbt.singleFileFinder
-import sbt.toGroupID
 
 /**
  * Simple plugin for generating the Java sources for Avro schemas and protocols.
@@ -52,9 +38,12 @@ object SbtAvro extends Plugin {
 
   val generate = TaskKey[Seq[File]]("generate", "Generate the Java sources for the Avro files.")
 
-  lazy val avroSettings: Seq[Setting[_]] = inConfig(avroConfig)(Seq[Setting[_]](
-    sourceDirectory <<= (sourceDirectory in Compile) { _ / "avro" },
-    javaSource <<= (sourceManaged in Compile) { _ / "compiled_avro" },
+  def avroSettings: Seq[Setting[_]] = avroSettingsForConfig(Compile)
+
+
+  def avroSettingsForConfig(config:Configuration) : Seq[Setting[_]] = inConfig(avroConfig)(Seq[Setting[_]](
+    sourceDirectory <<= (sourceDirectory in config) { _ / "avro" },
+    javaSource <<= (sourceManaged in config) { _ / "compiled_avro" },
     stringType := "CharSequence",
     version := "1.7.3",
 
@@ -63,8 +52,8 @@ object SbtAvro extends Plugin {
     },
 
     generate <<= sourceGeneratorTask)) ++ Seq[Setting[_]](
-    sourceGenerators in Compile <+= (generate in avroConfig),
-    managedSourceDirectories in Compile <+= (javaSource in avroConfig),
+    sourceGenerators in config <+= (generate in avroConfig),
+    managedSourceDirectories in config <+= (javaSource in avroConfig),
     cleanFiles <+= (javaSource in avroConfig),
     libraryDependencies <+= (version in avroConfig)("org.apache.avro" % "avro-compiler" % _),
     ivyConfigurations += avroConfig)
